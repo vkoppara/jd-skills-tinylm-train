@@ -90,6 +90,27 @@ python src/infer.py \
   --text "<job description>"
 ```
 
+You can also force offline behavior with environment variables:
+
+```
+TRANSFORMERS_OFFLINE=1 HF_HUB_OFFLINE=1 \
+python src/infer.py \
+  --model outputs/skills-lora \
+  --base-model base_model/flan-t5-small \
+  --local-only \
+  --text "<job description>"
+```
+
+### Optional: copy base model into the HF cache
+
+If you want to place the base model into the Hugging Face cache, run:
+
+```
+export HF_HOME="$HOME/.cache/huggingface"
+mkdir -p "$HF_HOME/hub/models--google--flan-t5-small/snapshots/1"
+cp -R base_model/flan-t5-small "$HF_HOME/hub/models--google--flan-t5-small/snapshots/1"
+```
+
 ## Deployment notes
 
 - CPU-only inference works fine for `flan-t5-small` (80M params).
