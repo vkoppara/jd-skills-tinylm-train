@@ -15,7 +15,9 @@ def build_prompt(text):
     )
 
 
-def resolve_base_model(model_path):
+def resolve_base_model(model_path, base_model_override=None):
+    if base_model_override:
+        return base_model_override
     adapter_config = Path(model_path) / "adapter_config.json"
     if adapter_config.exists():
         config = json.loads(adapter_config.read_text(encoding="utf-8"))
@@ -23,14 +25,18 @@ def resolve_base_model(model_path):
     return model_path
 
 
-def load_model(model_path, device):
+def load_model(model_path, device, base_model_override=None, local_only=False):
     adapter_config = Path(model_path) / "adapter_config.json"
     if adapter_config.exists():
-        base_name = resolve_base_model(model_path)
-        base_model = AutoModelForSeq2SeqLM.from_pretrained(base_name)
+        base_name = resolve_base_model(model_path, base_model_override)
+        base_model = AutoModelForSeq2SeqLM.from_pretrained(
+            base_name, local_files_only=local_only
+        )
         model = PeftModel.from_pretrained(base_model, model_path)
     else:
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
+        model = AutoModelForSeq2SeqLM.from_pretrained(
+            model_path, local_files_only=local_only
+        )
     model.to(device)
     model.eval()
     return model
@@ -62,12 +68,29 @@ def main():
     parser.add_argument("--text", required=True, help="Job description text")
     parser.add_argument("--max-new-tokens", type=int, default=96)
     parser.add_argument("--cpu", action="store_true")
+    parser.add_argument(
+        "--base-model",
+        default=None,
+        help="Path to local base model (e.g., base_model/flan-t5-small)",
+    )
+    parser.add_argument(
+        "--local-only",
+        action="store_true",
+        help="Disable Hugging Face Hub downloads",
+    )
     args = parser.parse_args()
 
     device = "cpu" if args.cpu or not torch.cuda.is_available() else "cuda"
-    base_name = resolve_base_model(args.model)
-    tokenizer = AutoTokenizer.from_pretrained(base_name, use_fast=True)
-    model = load_model(args.model, device)
+    base_name = resolve_base_model(args.model, args.base_model)
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_name, use_fast=True, local_files_only=args.local_only
+    )
+    model = load_model(
+        args.model,
+        device,
+        base_model_override=args.base_model,
+        local_only=args.local_only,
+    )
 
     prompt = build_prompt(args.text)
     inputs = tokenizer(prompt, return_tensors="pt").to(device)

@@ -78,6 +78,18 @@ The fine-tuned model is saved to `outputs/skills-lora` by default.
 python src/infer.py --model outputs/skills-lora --text "<job description>"
 ```
 
+### Offline inference (no Hugging Face access)
+
+If you downloaded the base model into `base_model/flan-t5-small`, run:
+
+```
+python src/infer.py \
+  --model outputs/skills-lora \
+  --base-model base_model/flan-t5-small \
+  --local-only \
+  --text "<job description>"
+```
+
 ## Deployment notes
 
 - CPU-only inference works fine for `flan-t5-small` (80M params).
