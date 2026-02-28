@@ -39,9 +39,16 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Download the base model
+## Download the base model (Git LFS)
 
-The trained adapter in this repo depends on `google/flan-t5-small`. Run this once to download the base model locally:
+This repo stores the base model (`flan-t5-small`) via Git LFS under `base_model/flan-t5-small`.
+
+```
+git lfs install
+git lfs pull
+```
+
+You can also run:
 
 ```
 python scripts/download_base_model.py
